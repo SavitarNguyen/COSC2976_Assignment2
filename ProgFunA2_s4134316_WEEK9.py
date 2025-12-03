@@ -1,0 +1,1195 @@
+"""
+COSC2976 Programming Fundamentals - Assignment 2 - WEEK 9 SUBMISSION
+Retail Management System using Object-Oriented Programming
+
+PASS + CREDIT + DI LEVEL IMPLEMENTATION
+
+This version includes:
+- Customer hierarchy (Customer, Member, VIPMember) with discount calculations
+- Product and Bundle classes
+- 9 Custom exception classes for validation
+- Exception handling throughout the program
+- File format validation
+- Order processing with date support (single item per order)
+- Order history management (read, display)
+- VIP discount and threshold adjustments
+- Support for product IDs and names in searches
+
+Author: Student ID s1234567
+Libraries used: sys (command-line arguments), datetime (order timestamps), os (file operations)
+"""
+
+import sys
+from datetime import datetime
+import os
+
+
+# ==================== CUSTOM EXCEPTIONS (CREDIT LEVEL) ====================
+# These custom exceptions provide specific error handling for various validation scenarios
+
+class InvalidProductError(Exception):
+    """Raised when a product does not exist in the system"""
+    pass
+
+
+class InvalidQuantityError(Exception):
+    """Raised when product quantity is invalid (non-integer, negative, zero, or exceeds stock)"""
+    pass
+
+
+class InvalidMembershipAnswerError(Exception):
+    """Raised when user enters invalid answer for membership question (not 'y' or 'n')"""
+    pass
+
+
+class InvalidMembershipTypeError(Exception):
+    """Raised when user enters invalid membership type (not 'M' or 'V')"""
+    pass
+
+
+class InvalidFileFormatError(Exception):
+    """Raised when data files have incorrect format or invalid data"""
+    pass
+
+
+class InvalidDiscountRateError(Exception):
+    """Raised when discount rate input is invalid (non-number or negative)"""
+    pass
+
+
+class InvalidThresholdError(Exception):
+    """Raised when threshold input is invalid (non-number, zero, or negative)"""
+    pass
+
+
+class InvalidPriceError(Exception):
+    """Raised when product price is not set, zero, or negative"""
+    pass
+
+
+class InvalidCustomerError(Exception):
+    """Raised when customer does not exist or is not a VIP member"""
+    pass
+
+
+# ==================== CUSTOMER CLASSES (PASS LEVEL) ====================
+
+class Customer:
+    """
+    Base class representing a normal customer without membership.
+    This class stores basic customer information and provides foundation for Member and VIPMember subclasses.
+
+    Attributes:
+        ID (str): Unique customer identifier starting with 'C'
+        name (str): Customer name (unique, no digits)
+        value (float): Total money customer has spent to date
+    """
+
+    def __init__(self, ID, name, value):
+        """Initialize a Customer with ID, name, and total value spent"""
+        self.__ID = ID
+        self.__name = name
+        self.__value = value
+
+    def get_ID(self):
+        """Return the customer ID"""
+        return self.__ID
+
+    def get_name(self):
+        """Return the customer name"""
+        return self.__name
+
+    def get_value(self):
+        """Return the total value spent by customer"""
+        return self.__value
+
+    def set_value(self, value):
+        """Update the total value spent by customer"""
+        self.__value = value
+
+    def get_discount(self, price):
+        """
+        Calculate discount for normal customers.
+        Normal customers receive no discount (0%).
+
+        Args:
+            price (float): Original price before discount
+
+        Returns:
+            tuple: (discount_rate, price_after_discount)
+        """
+        return (0, price)
+
+    def display_info(self):
+        """Display customer information including ID, name, discount rate, and total value spent"""
+        discount_rate, _ = self.get_discount(0)
+        print(f"ID: {self.__ID}, Name: {self.__name}, Discount: {discount_rate}, Value: {self.__value}")
+
+
+class Member(Customer):
+    """
+    Represents a customer with normal membership.
+    Members receive a flat discount rate on all orders (default 5%).
+
+    The flat rate is a class variable shared by all Member instances,
+    allowing store-wide discount adjustments.
+    """
+
+    # Class variable: discount rate shared by all members
+    __discount_rate = 0.05  # Default 5%
+
+    def __init__(self, ID, name, value):
+        """Initialize a Member - ID starts with 'M'"""
+        super().__init__(ID, name, value)
+
+    @classmethod
+    def get_discount_rate(cls):
+        """Return the current flat discount rate for all members"""
+        return cls.__discount_rate
+
+    @classmethod
+    def set_rate(cls, rate):
+        """
+        Adjust the flat discount rate for all members.
+        This is a class method that affects all Member instances.
+
+        Args:
+            rate (float): New discount rate (e.g., 0.05 for 5%)
+        """
+        cls.__discount_rate = rate
+
+    def get_discount(self, price):
+        """
+        Calculate discount for members with flat rate.
+
+        Args:
+            price (float): Original price before discount
+
+        Returns:
+            tuple: (discount_rate, price_after_discount)
+        """
+        discounted_price = price * (1 - self.__discount_rate)
+        return (self.__discount_rate, discounted_price)
+
+    def display_info(self):
+        """Display member information"""
+        print(f"ID: {self.get_ID()}, Name: {self.get_name()}, Discount: {self.__discount_rate}, Value: {self.get_value()}")
+
+
+class VIPMember(Customer):
+    """
+    Represents a customer with VIP membership.
+    VIP members have two-tier discount rates based on order price threshold.
+
+    - First discount rate: applies when order price <= threshold
+    - Second discount rate: applies when order price > threshold
+    - Second rate is always 5% higher than first rate
+    - Threshold is shared by all VIP members (class variable)
+    - Discount rates are individual per VIP member (instance variables)
+    """
+
+    # Class variable: threshold shared by all VIP members
+    __threshold = 1000.0  # Default threshold
+
+    def __init__(self, ID, name, value, rate1=0.10):
+        """
+        Initialize a VIP Member.
+
+        Args:
+            ID (str): Customer ID starting with 'V'
+            name (str): Customer name
+            value (float): Total value spent
+            rate1 (float): First discount rate (default 10%)
+        """
+        super().__init__(ID, name, value)
+        self.__rate1 = rate1  # Instance variable - can be different for each VIP member
+        self.__rate2 = rate1 + 0.05  # Second rate is always 5% higher
+
+    def get_rate1(self):
+        """Return the first discount rate"""
+        return self.__rate1
+
+    def get_rate2(self):
+        """Return the second discount rate"""
+        return self.__rate2
+
+    @classmethod
+    def get_threshold(cls):
+        """Return the threshold value (class method)"""
+        return cls.__threshold
+
+    @classmethod
+    def set_threshold(cls, threshold):
+        """
+        Set the threshold value for all VIP members.
+
+        Args:
+            threshold (float): New threshold value
+        """
+        cls.__threshold = threshold
+
+    def set_rate(self, rate1):
+        """
+        Adjust discount rates for this VIP member.
+        Second rate is automatically set to 5% higher than first rate.
+
+        Args:
+            rate1 (float): New first discount rate
+        """
+        self.__rate1 = rate1
+        self.__rate2 = rate1 + 0.05
+
+    def get_discount(self, price):
+        """
+        Calculate discount for VIP members using two-tier system.
+
+        Args:
+            price (float): Original price before discount
+
+        Returns:
+            tuple: (discount_rate, price_after_discount)
+        """
+        if price <= self.__threshold:
+            discounted_price = price * (1 - self.__rate1)
+            return (self.__rate1, discounted_price)
+        else:
+            discounted_price = price * (1 - self.__rate2)
+            return (self.__rate2, discounted_price)
+
+    def display_info(self):
+        """Display VIP member information"""
+        print(f"ID: {self.get_ID()}, Name: {self.get_name()}, Discount: {self.__rate1} {self.__rate2}, Threshold: {self.__threshold}, Value: {self.get_value()}")
+
+
+# ==================== PRODUCT CLASSES (PASS & CREDIT LEVEL) ====================
+
+class Product:
+    """
+    Represents a product in the store.
+
+    Attributes:
+        ID (str): Unique product identifier starting with 'P'
+        name (str): Product name (unique, no digits)
+        price (float): Product price (must be positive)
+        stock (int): Available stock quantity
+    """
+
+    def __init__(self, ID, name, price, stock):
+        """
+        Initialize a Product.
+
+        Args:
+            ID (str): Product ID
+            name (str): Product name
+            price (float): Product price
+            stock (int): Initial stock quantity
+        """
+        self.__ID = ID
+        self.__name = name
+        self.__price = price
+        self.__stock = stock
+
+    def get_ID(self):
+        """Return the product ID"""
+        return self.__ID
+
+    def get_name(self):
+        """Return the product name"""
+        return self.__name
+
+    def get_price(self):
+        """Return the product price"""
+        return self.__price
+
+    def set_price(self, price):
+        """
+        Set the product price.
+
+        Args:
+            price (float): New price (must be positive)
+
+        Raises:
+            InvalidPriceError: If price is zero or negative
+        """
+        if price <= 0:
+            raise InvalidPriceError("Product price must be positive.")
+        self.__price = price
+
+    def get_stock(self):
+        """Return the current stock quantity"""
+        return self.__stock
+
+    def set_stock(self, stock):
+        """
+        Set the stock quantity.
+
+        Args:
+            stock (int): New stock quantity
+        """
+        self.__stock = stock
+
+    def reduce_stock(self, quantity):
+        """
+        Reduce stock by specified quantity.
+
+        Args:
+            quantity (int): Quantity to reduce
+
+        Raises:
+            InvalidQuantityError: If quantity exceeds available stock
+        """
+        if quantity > self.__stock:
+            raise InvalidQuantityError(f"Insufficient stock. Available: {self.__stock}")
+        self.__stock -= quantity
+
+    def display_info(self):
+        """Display product information"""
+        print(f"ID: {self.__ID}, Name: {self.__name}, Price: {self.__price}, Stock: {self.__stock}")
+
+
+class Bundle(Product):
+    """
+    Represents a product bundle (CREDIT LEVEL).
+    A bundle is a collection of products sold together at a discounted price.
+    Bundle price is automatically set to 80% of the sum of component prices.
+
+    Attributes:
+        components (list): List of Product objects included in the bundle
+    """
+
+    def __init__(self, ID, name, stock, components):
+        """
+        Initialize a Bundle.
+
+        Args:
+            ID (str): Bundle ID starting with 'B'
+            name (str): Bundle name
+            stock (int): Bundle stock quantity
+            components (list): List of Product objects in the bundle
+        """
+        self.__components = components
+        # Calculate bundle price as 80% of component prices
+        total_price = sum(component.get_price() for component in components)
+        bundle_price = total_price * 0.8
+        super().__init__(ID, name, bundle_price, stock)
+
+    def get_components(self):
+        """Return the list of component products"""
+        return self.__components
+
+    def display_info(self):
+        """Display bundle information including components"""
+        component_ids = ", ".join([comp.get_ID() for comp in self.__components])
+        print(f"ID: {self.get_ID()}, Name: {self.get_name()}, Components: [{component_ids}], Price: {self.get_price()}, Stock: {self.get_stock()}")
+
+
+# ==================== ORDER CLASS (PASS & DI LEVEL - Single Item with Date) ====================
+
+class Order:
+    """
+    Represents a customer order with a single product and timestamp (DI LEVEL).
+
+    Attributes:
+        customer (Customer): The customer placing the order
+        product (Product): The product being ordered
+        quantity (int): Quantity ordered
+        date (datetime): Order timestamp
+    """
+
+    def __init__(self, customer, product, quantity, date=None):
+        """
+        Initialize an Order.
+
+        Args:
+            customer (Customer): The customer
+            product (Product): The product
+            quantity (int): Quantity ordered
+            date (datetime): Order timestamp (defaults to current time)
+        """
+        self.__customer = customer
+        self.__product = product
+        self.__quantity = quantity
+        self.__date = date if date else datetime.now()
+
+    def get_customer(self):
+        """Return the customer"""
+        return self.__customer
+
+    def get_product(self):
+        """Return the product"""
+        return self.__product
+
+    def get_quantity(self):
+        """Return the quantity"""
+        return self.__quantity
+
+    def get_date(self):
+        """Return the order date"""
+        return self.__date
+
+    def calculate_total(self):
+        """
+        Calculate the total price before discount.
+
+        Returns:
+            float: Total price (product price * quantity)
+        """
+        return self.__product.get_price() * self.__quantity
+
+    def process_order(self):
+        """
+        Process the order:
+        1. Calculate total price
+        2. Apply discount based on customer type
+        3. Update customer's total value
+        4. Reduce product stock
+
+        Returns:
+            tuple: (discount_rate, total_price_after_discount)
+        """
+        total_price = self.calculate_total()
+
+        # Apply customer discount
+        discount_rate, final_price = self.__customer.get_discount(total_price)
+
+        # Update customer value
+        self.__customer.set_value(self.__customer.get_value() + final_price)
+
+        # Reduce product stock
+        self.__product.reduce_stock(self.__quantity)
+
+        return (discount_rate, final_price)
+
+
+# ==================== RECORDS CLASS (PASS, CREDIT & DI LEVEL) ====================
+
+class Records:
+    """
+    Central repository for managing customers, products, and orders (DI LEVEL).
+    This class handles file I/O and data management operations.
+
+    Attributes:
+        customers (list): List of Customer objects
+        products (list): List of Product objects
+        orders (list): List of Order objects
+    """
+
+    def __init__(self):
+        """Initialize empty records"""
+        self.__customers = []
+        self.__products = []
+        self.__orders = []
+
+    def get_customers(self):
+        """Return the list of customers"""
+        return self.__customers
+
+    def get_products(self):
+        """Return the list of products"""
+        return self.__products
+
+    def get_orders(self):
+        """Return the list of orders"""
+        return self.__orders
+
+    def add_customer(self, customer):
+        """Add a customer to the records"""
+        self.__customers.append(customer)
+
+    def add_product(self, product):
+        """Add a product to the records"""
+        self.__products.append(product)
+
+    def add_order(self, order):
+        """Add an order to the records"""
+        self.__orders.append(order)
+
+    def read_customers(self, filename="customers.txt"):
+        """
+        Read customer data from file with validation (CREDIT LEVEL).
+
+        File format: ID, name, discount_rate, value (comma-separated)
+        - C prefix: Normal customer
+        - M prefix: Member
+        - V prefix: VIP member (requires rate1)
+
+        Args:
+            filename (str): Path to customer file
+
+        Raises:
+            InvalidFileFormatError: If file format is invalid or data is corrupted
+        """
+        try:
+            with open(filename, 'r') as file:
+                for line_num, line in enumerate(file, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    parts = [part.strip() for part in line.split(',')]
+
+                    if len(parts) < 4:
+                        raise InvalidFileFormatError(f"Line {line_num}: Expected at least 3 fields, got {len(parts)}")
+
+                    customer_id = parts[0]
+                    name = parts[1]
+
+                    # Validate value is a number
+                    try:
+                        discount_rate = float(parts[2])
+                    except ValueError:
+                        raise InvalidFileFormatError(f"Line {line_num}: Invalid discount_rate '{parts[2]}' - must be a number")
+
+                    # Validate value is a number
+                    try:
+                        value = float(parts[3])
+                    except ValueError:
+                        raise InvalidFileFormatError(f"Line {line_num}: Invalid value '{parts[2]}' - must be a number")
+
+                    # Create appropriate customer type
+                    if customer_id.startswith('C'):
+                        customer = Customer(customer_id, name, value)
+                    elif customer_id.startswith('M'):
+                        customer = Member(customer_id, name, value)
+                    elif customer_id.startswith('V'):
+                        if len(parts) < 4:
+                            raise InvalidFileFormatError(f"Line {line_num}: VIP member requires rate1")
+                        try:
+                            rate1 = float(parts[3])
+                        except ValueError:
+                            raise InvalidFileFormatError(f"Line {line_num}: Invalid rate1 '{parts[3]}' - must be a number")
+                        customer = VIPMember(customer_id, name, value, rate1)
+                    else:
+                        raise InvalidFileFormatError(f"Line {line_num}: Invalid customer ID prefix '{customer_id[0]}' - must be C, M, or V")
+
+                    self.add_customer(customer)
+
+        except FileNotFoundError:
+            raise InvalidFileFormatError(f"File not found: {filename}")
+        except Exception as e:
+            if isinstance(e, InvalidFileFormatError):
+                raise
+            raise InvalidFileFormatError(f"Error reading {filename}: {str(e)}")
+
+    def read_products(self, filename="products.txt"):
+        """
+        Read product data from file with validation (CREDIT LEVEL).
+
+        File format: ID, name, price, stock[, component_ids] (comma-separated)
+        - P prefix: Normal product
+        - B prefix: Bundle (requires component IDs)
+
+        Args:
+            filename (str): Path to product file
+
+        Raises:
+            InvalidFileFormatError: If file format is invalid or data is corrupted
+        """
+        try:
+            # First pass: read all regular products
+            products_data = []
+            with open(filename, 'r') as file:
+                for line_num, line in enumerate(file, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    parts = [part.strip() for part in line.split(',')]
+
+                    if len(parts) < 4:
+                        raise InvalidFileFormatError(f"Line {line_num}: Expected at least 4 fields, got {len(parts)}")
+
+                    product_id = parts[0]
+                    name = parts[1]
+
+                    # Validate price
+                    try:
+                        price = float(parts[2])
+                        if price <= 0:
+                            raise InvalidFileFormatError(f"Line {line_num}: Price must be positive, got {price}")
+                    except ValueError:
+                        raise InvalidFileFormatError(f"Line {line_num}: Invalid price '{parts[2]}' - must be a number")
+
+                    # Validate stock
+                    try:
+                        stock = int(parts[3])
+                    except ValueError:
+                        raise InvalidFileFormatError(f"Line {line_num}: Invalid stock '{parts[3]}' - must be an integer")
+
+                    if product_id.startswith('P'):
+                        product = Product(product_id, name, price, stock)
+                        self.add_product(product)
+                        products_data.append((line_num, product_id, None))
+                    elif product_id.startswith('B'):
+                        if len(parts) < 5:
+                            raise InvalidFileFormatError(f"Line {line_num}: Bundle requires component IDs")
+                        component_ids = [cid.strip() for cid in parts[4:]]
+                        products_data.append((line_num, product_id, (name, stock, component_ids)))
+                    else:
+                        raise InvalidFileFormatError(f"Line {line_num}: Invalid product ID prefix '{product_id[0]}' - must be P or B")
+
+            # Second pass: create bundles now that all products exist
+            for line_num, product_id, bundle_data in products_data:
+                if bundle_data:
+                    name, stock, component_ids = bundle_data
+                    components = []
+                    for comp_id in component_ids:
+                        comp = self.find_product(comp_id)
+                        if not comp:
+                            raise InvalidFileFormatError(f"Line {line_num}: Component '{comp_id}' not found")
+                        if isinstance(comp, Bundle):
+                            raise InvalidFileFormatError(f"Line {line_num}: Bundle cannot contain another bundle")
+                        components.append(comp)
+
+                    bundle = Bundle(product_id, name, stock, components)
+                    self.add_product(bundle)
+
+        except FileNotFoundError:
+            raise InvalidFileFormatError(f"File not found: {filename}")
+        except Exception as e:
+            if isinstance(e, InvalidFileFormatError):
+                raise
+            raise InvalidFileFormatError(f"Error reading {filename}: {str(e)}")
+
+    def read_orders(self, filename="orders.txt"):
+        """
+        Read orders from CSV file and populate order history (DI LEVEL).
+
+        File format: customer_name/ID, product_name/ID, quantity, date
+        (Single item per order for DI level)
+
+        Args:
+            filename (str): Name of order file
+
+        Raises:
+            InvalidFileFormatError: If file has incorrect format or invalid data
+        """
+        try:
+            with open(filename, 'r') as file:
+                for line_num, line in enumerate(file, 1):
+                    try:
+                        parts = [part.strip() for part in line.strip().split(',')]
+
+                        if len(parts) != 4:
+                            raise InvalidFileFormatError(f"Line {line_num}: Expected 4 fields (customer, product, quantity, date), got {len(parts)}")
+
+                        # Extract fields
+                        customer_identifier = parts[0]
+                        product_identifier = parts[1]
+                        quantity_str = parts[2]
+                        date_str = parts[3]
+
+                        # Find customer
+                        customer = self.find_customer(customer_identifier)
+                        if customer is None:
+                            raise InvalidFileFormatError(f"Line {line_num}: Customer '{customer_identifier}' not found")
+
+                        # Find product
+                        product = self.find_product(product_identifier)
+                        if product is None:
+                            raise InvalidFileFormatError(f"Line {line_num}: Product '{product_identifier}' not found")
+
+                        # Parse quantity
+                        try:
+                            quantity = int(quantity_str)
+                        except ValueError:
+                            raise InvalidFileFormatError(f"Line {line_num}: Invalid quantity format")
+
+                        # Parse date
+                        try:
+                            order_date = datetime.strptime(date_str, "%d/%m/%Y %H:%M:%S")
+                        except ValueError:
+                            raise InvalidFileFormatError(f"Line {line_num}: Invalid date format (expected DD/MM/YYYY HH:MM:SS)")
+
+                        # Create and add order
+                        order = Order(customer, product, quantity, order_date)
+                        self.__orders.append(order)
+
+                    except InvalidFileFormatError:
+                        raise
+                    except Exception as e:
+                        raise InvalidFileFormatError(f"Line {line_num}: {str(e)}")
+
+        except FileNotFoundError:
+            # If orders file doesn't exist, that's okay (optional file)
+            pass
+        except InvalidFileFormatError:
+            raise
+        except Exception as e:
+            raise InvalidFileFormatError(f"Error reading orders file: {str(e)}")
+
+    def find_customer(self, identifier):
+        """
+        Search for a customer by ID or name (CREDIT LEVEL - supports both).
+
+        Args:
+            identifier (str): Customer ID or name
+
+        Returns:
+            Customer or None: Found customer or None if not found
+        """
+        for customer in self.__customers:
+            if customer.get_ID() == identifier or customer.get_name() == identifier:
+                return customer
+        return None
+
+    def find_product(self, identifier):
+        """
+        Search for a product by ID or name (CREDIT LEVEL - supports both).
+
+        Args:
+            identifier (str): Product ID or name
+
+        Returns:
+            Product or None: Found product or None if not found
+        """
+        for product in self.__products:
+            if product.get_ID() == identifier or product.get_name() == identifier:
+                return product
+        return None
+
+    def list_customers(self):
+        """Display all customers with their information"""
+        print("\n========== CUSTOMER LIST ==========")
+        for customer in self.__customers:
+            customer.display_info()
+        print("===================================\n")
+
+    def list_products(self):
+        """Display all products with their information"""
+        print("\n========== PRODUCT LIST ==========")
+        for product in self.__products:
+            product.display_info()
+        print("==================================\n")
+
+    def list_orders(self):
+        """Display all orders (DI LEVEL)"""
+        print("\n========== ORDER LIST ==========")
+        if not self.__orders:
+            print("No orders found.")
+        else:
+            for order in self.__orders:
+                customer = order.get_customer()
+                product = order.get_product()
+                quantity = order.get_quantity()
+                date = order.get_date()
+                date_str = date.strftime("%d/%m/%Y %H:%M:%S")
+                print(f"{customer.get_name()}, {product.get_name()}, {quantity}, {date_str}")
+        print("================================\n")
+
+    def list_customer_orders(self, identifier):
+        """
+        Display all orders for a specific customer (DI LEVEL).
+
+        Args:
+            identifier (str): Customer ID or name
+        """
+        customer = self.find_customer(identifier)
+        if customer is None:
+            raise InvalidCustomerError("Invalid customer!")
+
+        print(f"\n========== ORDERS FOR {customer.get_name()} ==========")
+        customer_orders = [order for order in self.__orders if order.get_customer() == customer]
+
+        if not customer_orders:
+            print("No orders found for this customer.")
+        else:
+            for order in customer_orders:
+                product = order.get_product()
+                quantity = order.get_quantity()
+                date = order.get_date()
+                date_str = date.strftime("%d/%m/%Y %H:%M:%S")
+                print(f"{customer.get_name()}, {product.get_name()}, {quantity}, {date_str}")
+        print("=" * 50 + "\n")
+
+
+# ==================== OPERATIONS CLASS (PASS, CREDIT & DI LEVEL) ====================
+
+class Operations:
+    """
+    Main class for the retail management system operations.
+    Handles user interface and business logic for PASS, CREDIT, and DI level features.
+    """
+
+    def __init__(self, customer_file="customers.txt", product_file="products.txt", order_file="orders.txt"):
+        """
+        Initialize the Operations system.
+
+        Args:
+            customer_file (str): Path to customer data file
+            product_file (str): Path to product data file
+            order_file (str): Path to order data file
+        """
+        self.__records = Records()
+        self.__customer_file = customer_file
+        self.__product_file = product_file
+        self.__order_file = order_file
+        self.__next_customer_number = 1
+
+    def initialize(self):
+        """
+        Initialize the system by loading data from files.
+
+        Returns:
+            bool: True if initialization successful, False otherwise
+        """
+        try:
+            # Check if required files exist
+            if not os.path.exists(self.__customer_file):
+                print(f"Error: {self.__customer_file} is missing.")
+                return False
+            if not os.path.exists(self.__product_file):
+                print(f"Error: {self.__product_file} is missing.")
+                return False
+
+            # Read customer file with exception handling
+            try:
+                self.__records.read_customers(self.__customer_file)
+            except InvalidFileFormatError as e:
+                print(f"Error in {self.__customer_file}: {e}")
+                return False
+
+            # Read product file with exception handling
+            try:
+                self.__records.read_products(self.__product_file)
+            except InvalidFileFormatError as e:
+                print(f"Error in {self.__product_file}: {e}")
+                return False
+
+            # Determine next customer number
+            customers = self.__records.get_customers()
+            if customers:
+                max_num = 0
+                for customer in customers:
+                    customer_id = customer.get_ID()
+                    num_str = customer_id[1:]
+                    try:
+                        num = int(num_str)
+                        if num > max_num:
+                            max_num = num
+                    except ValueError:
+                        pass
+                self.__next_customer_number = max_num + 1
+
+            # Read order file (DI LEVEL - optional)
+            if os.path.exists(self.__order_file):
+                try:
+                    self.__records.read_orders(self.__order_file)
+                except InvalidFileFormatError as e:
+                    print(f"Cannot load the order file. Run as if there is no order previously.")
+                    print(f"Reason: {e}")
+
+            return True
+
+        except Exception as e:
+            print(f"Unexpected error during initialization: {e}")
+            return False
+
+    def display_menu(self):
+        """Display the main menu"""
+        print("\nWelcome to the RMIT retail management system!")
+        print("\n" + "=" * 60)
+        print("You can choose from the following options:")
+        print("1: Place an order")
+        print("2: Display existing customers")
+        print("3: Display existing products")
+        print("4: Adjust the discount rates of a VIP member")
+        print("5: Adjust the threshold limit of all VIP members")
+        print("6: Display all orders")
+        print("7: Display all orders of a customer")
+        print("0: Exit the program")
+        print("=" * 60)
+
+    def place_order(self):
+        """
+        Handle place order operation (DI LEVEL with date support).
+        Supports single item per order.
+        """
+        try:
+            # Get product identifier
+            product_id = input("\nEnter the name or ID of the product you want to buy: ").strip()
+            product = self.__records.find_product(product_id)
+
+            if not product:
+                raise InvalidProductError(f"Product '{product_id}' does not exist.")
+
+            # Validate product has positive price
+            if product.get_price() <= 0:
+                raise InvalidPriceError("This product cannot be sold (price not set or invalid).")
+
+            # Get quantity with validation
+            quantity_str = input("Enter the quantity: ").strip()
+            try:
+                quantity = int(quantity_str)
+                if quantity <= 0:
+                    raise InvalidQuantityError("Quantity must be a positive integer.")
+                if quantity > product.get_stock():
+                    raise InvalidQuantityError(f"Insufficient stock. Available: {product.get_stock()}")
+            except ValueError:
+                raise InvalidQuantityError("Quantity must be a valid integer.")
+
+            # Ask about existing customer
+            existing_answer = input("Are you an existing customer? (y/n): ").strip().lower()
+            if existing_answer not in ['y', 'n']:
+                raise InvalidMembershipAnswerError("Please answer 'y' or 'n'.")
+
+            customer = None
+
+            if existing_answer == 'y':
+                # Existing customer
+                customer_id = input("Enter your name or ID: ").strip()
+                customer = self.__records.find_customer(customer_id)
+
+                if not customer:
+                    raise InvalidCustomerError(f"Customer '{customer_id}' does not exist.")
+
+            else:
+                # New customer
+                name = input("Enter your name: ").strip()
+
+                # Check if name already exists
+                if self.__records.find_customer(name):
+                    raise InvalidCustomerError(f"Customer with name '{name}' already exists.")
+
+                # Ask about membership
+                membership_answer = input("Do you want to be a member? (y/n): ").strip().lower()
+                if membership_answer not in ['y', 'n']:
+                    raise InvalidMembershipAnswerError("Please answer 'y' or 'n'.")
+
+                if membership_answer == 'n':
+                    # Create normal customer
+                    customer_id = f"C{self.__next_customer_number}"
+                    customer = Customer(customer_id, name, 0.0)
+                    self.__records.add_customer(customer)
+                    self.__next_customer_number += 1
+
+                else:
+                    # Ask for membership type
+                    membership_type = input("Which level of membership do you want? (M/V): ").strip().upper()
+                    if membership_type not in ['M', 'V']:
+                        raise InvalidMembershipTypeError("Please enter 'M' for Member or 'V' for VIP.")
+
+                    if membership_type == 'M':
+                        # Create Member
+                        customer_id = f"M{self.__next_customer_number}"
+                        customer = Member(customer_id, name, 0.0)
+                        self.__records.add_customer(customer)
+                        self.__next_customer_number += 1
+
+                    else:
+                        # Create VIP Member with custom rate
+                        rate_str = input("Enter the first discount rate (e.g., 0.10 for 10%): ").strip()
+                        try:
+                            rate1 = float(rate_str)
+                            if rate1 < 0:
+                                raise InvalidDiscountRateError("Discount rate cannot be negative.")
+                        except ValueError:
+                            raise InvalidDiscountRateError("Discount rate must be a valid number.")
+
+                        customer_id = f"V{self.__next_customer_number}"
+                        customer = VIPMember(customer_id, name, 0.0, rate1)
+                        self.__records.add_customer(customer)
+                        self.__next_customer_number += 1
+
+            # Create and process order
+            order = Order(customer, product, quantity)
+            discount_rate, final_price = order.process_order()
+
+            # Add order to history (DI LEVEL)
+            self.__records.add_order(order)
+
+            # Display order confirmation
+            print("\n" + "=" * 60)
+            print("Order placed successfully!")
+            print(f"Customer: {customer.get_name()} ({customer.get_ID()})")
+            print(f"Product: {product.get_name()} ({product.get_ID()})")
+            print(f"Quantity: {quantity}")
+            print(f"Unit Price: ${product.get_price():.2f}")
+            print(f"Subtotal: ${order.calculate_total():.2f}")
+            print(f"Discount: {discount_rate * 100:.1f}%")
+            print(f"Total Price: ${final_price:.2f}")
+            print("=" * 60 + "\n")
+
+        except InvalidProductError as e:
+            print(f"\nError: {e}\n")
+        except InvalidQuantityError as e:
+            print(f"\nError: {e}\n")
+        except InvalidMembershipAnswerError as e:
+            print(f"\nError: {e}\n")
+        except InvalidMembershipTypeError as e:
+            print(f"\nError: {e}\n")
+        except InvalidCustomerError as e:
+            print(f"\nError: {e}\n")
+        except InvalidDiscountRateError as e:
+            print(f"\nError: {e}\n")
+        except InvalidPriceError as e:
+            print(f"\nError: {e}\n")
+        except Exception as e:
+            print(f"\nUnexpected error: {e}\n")
+
+    def display_customers(self):
+        """Display all customers"""
+        self.__records.list_customers()
+
+    def display_products(self):
+        """Display all products"""
+        self.__records.list_products()
+
+    def adjust_vip_discount(self):
+        """
+        Adjust discount rates for a specific VIP member (DI LEVEL).
+
+        Process:
+        1. Get VIP member identifier (ID or name)
+        2. Validate that customer is a VIP member
+        3. Get new first discount rate
+        4. Update rates (second rate = first rate + 5%)
+        """
+        try:
+            identifier = input("\nEnter the name or ID of the VIP member: ").strip()
+
+            # Find customer
+            customer = self.__records.find_customer(identifier)
+
+            if customer is None or not isinstance(customer, VIPMember):
+                raise InvalidCustomerError("Invalid customer!")
+
+            # Get new discount rate
+            while True:
+                try:
+                    rate_input = input("Enter the new first discount rate (e.g., 0.10 for 10%): ").strip()
+
+                    try:
+                        new_rate = float(rate_input)
+                    except ValueError:
+                        raise InvalidDiscountRateError("Invalid discount rate. Please enter a valid number.")
+
+                    if new_rate < 0:
+                        raise InvalidDiscountRateError("Invalid discount rate. Please enter a non-negative number.")
+
+                    break
+                except InvalidDiscountRateError as e:
+                    print(str(e))
+
+            # Update rate
+            customer.set_rate(new_rate)
+            print(f"\nDiscount rates updated for {customer.get_name()}:")
+            print(f"First rate: {customer.get_rate1() * 100}%")
+            print(f"Second rate: {customer.get_rate2() * 100}%")
+
+        except InvalidCustomerError as e:
+            print(str(e))
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+    def adjust_vip_threshold(self):
+        """
+        Adjust threshold for all VIP members (DI LEVEL).
+
+        Process:
+        1. Get new threshold value
+        2. Validate threshold (must be positive number)
+        3. Update threshold for all VIP members
+        """
+        try:
+            while True:
+                try:
+                    threshold_input = input("\nEnter the new threshold limit for all VIP members: ").strip()
+
+                    try:
+                        new_threshold = float(threshold_input)
+                    except ValueError:
+                        raise InvalidThresholdError("Invalid threshold. Please enter a valid number.")
+
+                    if new_threshold <= 0:
+                        raise InvalidThresholdError("Invalid threshold. Please enter a positive number.")
+
+                    break
+                except InvalidThresholdError as e:
+                    print(str(e))
+
+            # Update threshold
+            VIPMember.set_threshold(new_threshold)
+            print(f"\nThreshold updated to {new_threshold} for all VIP members.")
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+    def display_all_orders(self):
+        """Display all orders (DI LEVEL)"""
+        self.__records.list_orders()
+
+    def display_customer_orders(self):
+        """Display orders for a specific customer (DI LEVEL)"""
+        try:
+            identifier = input("\nEnter the name or ID of the customer: ").strip()
+            self.__records.list_customer_orders(identifier)
+        except InvalidCustomerError as e:
+            print(str(e))
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+    def run(self):
+        """Main program loop"""
+        while True:
+            self.display_menu()
+            choice = input("\nChoose one option: ").strip()
+
+            if choice == '1':
+                self.place_order()
+            elif choice == '2':
+                self.display_customers()
+            elif choice == '3':
+                self.display_products()
+            elif choice == '4':
+                self.adjust_vip_discount()
+            elif choice == '5':
+                self.adjust_vip_threshold()
+            elif choice == '6':
+                self.display_all_orders()
+            elif choice == '7':
+                self.display_customer_orders()
+            elif choice == '0':
+                print("\nThank you for using the RMIT retail management system. Goodbye!")
+                break
+            else:
+                print("\nInvalid option. Please try again.")
+
+
+# ==================== MAIN PROGRAM ====================
+
+def main():
+    """Main entry point for the program"""
+    customer_file = "customers.txt"
+    product_file = "products.txt"
+    order_file = "orders.txt"
+
+    # Handle command-line arguments (DI LEVEL - supports 3 files)
+    if len(sys.argv) == 1:
+        # Use default files
+        pass
+    elif len(sys.argv) == 3:
+        customer_file = sys.argv[1]
+        product_file = sys.argv[2]
+    elif len(sys.argv) == 4:
+        customer_file = sys.argv[1]
+        product_file = sys.argv[2]
+        order_file = sys.argv[3]
+    else:
+        print("Usage:")
+        print(f"  {sys.argv[0]}                                          # Use default files")
+        print(f"  {sys.argv[0]} <customer_file> <product_file>           # Specify files")
+        print(f"  {sys.argv[0]} <customer_file> <product_file> <order_file>  # Specify all files")
+        sys.exit(1)
+
+    operations = Operations(customer_file, product_file, order_file)
+
+    if operations.initialize():
+        operations.run()
+    else:
+        print("Failed to initialize the system. Exiting.")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

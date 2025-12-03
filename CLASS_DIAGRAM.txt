@@ -1,0 +1,321 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                      CLASS DIAGRAM - ASSIGNMENT 2                        ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+
+1. CUSTOMER CLASS HIERARCHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                           ┌─────────────────────┐
+                           │     Customer        │
+                           │   (Base Class)      │
+                           ├─────────────────────┤
+                           │ - __ID              │
+                           │ - __name            │
+                           │ - __value           │
+                           ├─────────────────────┤
+                           │ + get_ID()          │
+                           │ + get_name()        │
+                           │ + get_value()       │
+                           │ + set_value()       │
+                           │ + get_discount()    │
+                           │ + display_info()    │
+                           └──────────┬──────────┘
+                                      │
+                        ┌─────────────┴─────────────┐
+                        │                           │
+            ┌───────────▼──────────┐    ┌──────────▼──────────┐
+            │      Member          │    │    VIPMember        │
+            ├──────────────────────┤    ├─────────────────────┤
+            │ - __discount_rate    │    │ - __rate1           │
+            │   (class variable)   │    │ - __rate2           │
+            ├──────────────────────┤    │ - __threshold       │
+            │ + get_discount_rate()│    │   (class variable)  │
+            │ + set_rate()         │    ├─────────────────────┤
+            │ + get_discount()     │    │ + get_rate1()       │
+            │ + display_info()     │    │ + get_rate2()       │
+            └──────────────────────┘    │ + get_threshold()   │
+                                        │ + set_threshold()   │
+          Discount: 5% flat rate        │ + set_rate()        │
+                                        │ + get_discount()    │
+                                        │ + display_info()    │
+                                        └─────────────────────┘
+
+                                    Discount: Two-tier
+                                    rate1: <= threshold
+                                    rate2: > threshold
+                                    (rate2 = rate1 + 5%)
+
+
+2. PRODUCT CLASS HIERARCHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                           ┌─────────────────────┐
+                           │      Product        │
+                           │   (Base Class)      │
+                           ├─────────────────────┤
+                           │ - __ID              │
+                           │ - __name            │
+                           │ - __price           │
+                           │ - __stock           │
+                           ├─────────────────────┤
+                           │ + get_ID()          │
+                           │ + get_name()        │
+                           │ + get_price()       │
+                           │ + set_price()       │
+                           │ + get_stock()       │
+                           │ + set_stock()       │
+                           │ + reduce_stock()    │
+                           │ + display_info()    │
+                           └──────────┬──────────┘
+                                      │
+                                      │
+                          ┌───────────▼──────────┐
+                          │      Bundle          │
+                          ├──────────────────────┤
+                          │ - __components       │
+                          │   (list of Products) │
+                          ├──────────────────────┤
+                          │ + get_components()   │
+                          │ + display_info()     │
+                          └──────────────────────┘
+
+                      Price = 80% of sum of
+                      component prices
+
+
+3. ORDER CLASS STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+              ┌─────────────────────┐
+              │    OrderItem        │
+              │  (Helper Class)     │
+              ├─────────────────────┤
+              │ - __product         │
+              │ - __quantity        │
+              ├─────────────────────┤
+              │ + get_product()     │
+              │ + get_quantity()    │
+              │ + get_subtotal()    │
+              └──────────┬──────────┘
+                         │
+                         │ used by
+                         │
+              ┌──────────▼──────────┐
+              │       Order         │
+              ├─────────────────────┤
+              │ - __customer        │
+              │ - __items (list)    │
+              │ - __date            │
+              ├─────────────────────┤
+              │ + get_customer()    │
+              │ + get_items()       │
+              │ + get_date()        │
+              │ + calculate_total() │
+              │ + process_order()   │
+              └─────────────────────┘
+
+
+4. RECORDS CLASS (Central Repository)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+              ┌─────────────────────────────────┐
+              │         Records                 │
+              │  (Central Data Repository)      │
+              ├─────────────────────────────────┤
+              │ - __customers (list)            │
+              │ - __products (list)             │
+              │ - __orders (list)               │
+              ├─────────────────────────────────┤
+              │ + get_customers()               │
+              │ + get_products()                │
+              │ + get_orders()                  │
+              │ + add_customer()                │
+              │ + add_product()                 │
+              │ + add_order()                   │
+              │ + read_customers()              │
+              │ + read_products()               │
+              │ + read_orders()                 │
+              │ + find_customer()               │
+              │ + find_product()                │
+              │ + list_customers()              │
+              │ + list_products()               │
+              │ + list_orders()                 │
+              │ + list_customer_orders()        │
+              │ + summarize_orders()            │
+              │ + get_most_valuable_customer()  │
+              │ + get_most_popular_product()    │
+              │ + write_customers()             │
+              │ + write_products()              │
+              │ + write_orders()                │
+              └─────────────────────────────────┘
+
+
+5. OPERATIONS CLASS (User Interface)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+              ┌─────────────────────────────────┐
+              │        Operations               │
+              │     (Menu System)               │
+              ├─────────────────────────────────┤
+              │ - __records                     │
+              │ - __customer_file               │
+              │ - __product_file                │
+              │ - __order_file                  │
+              │ - __next_customer_number        │
+              ├─────────────────────────────────┤
+              │ + initialize()                  │
+              │ + display_menu()                │
+              │ + place_order()                 │
+              │ + display_customers()           │
+              │ + display_products()            │
+              │ + adjust_vip_discount()         │
+              │ + adjust_vip_threshold()        │
+              │ + display_all_orders()          │
+              │ + display_customer_orders()     │
+              │ + summarize_orders()            │
+              │ + reveal_most_valuable()        │
+              │ + reveal_most_popular()         │
+              │ + run()                         │
+              └─────────────────────────────────┘
+
+
+6. EXCEPTION HIERARCHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                        Exception (built-in)
+                              │
+          ┌───────────────────┼───────────────────┐
+          │                   │                   │
+   InvalidProductError  InvalidQuantityError  InvalidMembershipAnswerError
+          │                   │                   │
+   InvalidMembershipTypeError InvalidFileFormatError InvalidDiscountRateError
+          │                   │                   │
+   InvalidThresholdError InvalidPriceError  InvalidCustomerError
+
+
+7. RELATIONSHIPS SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌──────────────┐                      ┌──────────────┐
+│   Customer   │ ◄───── places ────── │    Order     │
+└──────┬───────┘                      └──────┬───────┘
+       │                                     │
+       │ inherits                            │ contains
+       │                                     │
+┌──────▼──────┐                       ┌─────▼────────┐
+│   Member    │                       │  OrderItem   │
+└─────────────┘                       └──────┬───────┘
+                                             │ references
+┌─────────────┐                       ┌──────▼───────┐
+│  VIPMember  │                       │   Product    │
+└─────────────┘                       └──────┬───────┘
+                                             │
+                                             │ inherits
+                                      ┌──────▼───────┐
+                                      │    Bundle    │
+                                      └──────┬───────┘
+                                             │ contains
+                                      ┌──────▼───────┐
+                                      │   Product    │
+                                      │  (components)│
+                                      └──────────────┘
+
+┌──────────────┐
+│   Records    │ ───── manages ────► Customers, Products, Orders
+└──────────────┘
+
+┌──────────────┐
+│  Operations  │ ───── uses ────────► Records
+└──────────────┘
+
+
+8. DATA FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                    ┌─────────────────┐
+                    │  Main Program   │
+                    │    (main())     │
+                    └────────┬────────┘
+                             │ creates
+                    ┌────────▼────────┐
+                    │   Operations    │
+                    └────────┬────────┘
+                             │ uses
+                    ┌────────▼────────┐
+                    │    Records      │
+                    └────────┬────────┘
+                             │ manages
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+┌────────▼────────┐ ┌────────▼────────┐ ┌───────▼────────┐
+│   Customers     │ │    Products     │ │    Orders      │
+│   (list)        │ │    (list)       │ │    (list)      │
+└─────────────────┘ └─────────────────┘ └────────────────┘
+
+
+9. KEY DESIGN PATTERNS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. INHERITANCE
+   - Customer → Member, VIPMember
+   - Product → Bundle
+
+2. POLYMORPHISM
+   - get_discount() overridden in subclasses
+   - display_info() customized per type
+
+3. ENCAPSULATION
+   - Private attributes (__name, __price, etc.)
+   - Public getter/setter methods
+
+4. COMPOSITION
+   - Order contains OrderItems
+   - Bundle contains Products
+   - Records contains Customers, Products, Orders
+
+5. REPOSITORY PATTERN
+   - Records class centralizes data access
+
+6. STRATEGY PATTERN
+   - Different discount calculation strategies
+
+
+10. METHOD OVERRIDE EXAMPLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+get_discount(price) implementations:
+
+Customer:
+  return (0, price)                    # No discount
+
+Member:
+  discounted = price * (1 - rate)
+  return (rate, discounted)            # Flat 5% discount
+
+VIPMember:
+  if price <= threshold:
+    discounted = price * (1 - rate1)
+    return (rate1, discounted)         # First rate
+  else:
+    discounted = price * (1 - rate2)
+    return (rate2, discounted)         # Second rate
+
+
+11. FILE HANDLING FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Startup:
+  customers.txt ──► read_customers() ──► Customer objects ──► __customers list
+  products.txt  ──► read_products()  ──► Product objects  ──► __products list
+  orders.txt    ──► read_orders()    ──► Order objects    ──► __orders list
+
+Exit:
+  __customers list ──► write_customers() ──► customers.txt
+  __products list  ──► write_products()  ──► products.txt
+  __orders list    ──► write_orders()    ──► orders.txt
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                       END OF CLASS DIAGRAM                               ║
+╚══════════════════════════════════════════════════════════════════════════╝
