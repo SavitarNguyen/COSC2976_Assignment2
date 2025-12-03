@@ -550,9 +550,9 @@ class Records:
         """
         Read product data from file with validation (CREDIT LEVEL).
 
-        File format: ID, name, price, stock[, component_ids] (comma-separated)
-        - P prefix: Normal product
-        - B prefix: Bundle (requires component IDs)
+        File format:
+        - Regular Product: ID, name, price, stock
+        - Bundle: ID, name, component1, component2, ..., stock
 
         Args:
             filename (str): Path to product file
@@ -562,7 +562,7 @@ class Records:
         """
         try:
             # First pass: read all regular products
-            products_data = []
+            bundle_lines = []
             with open(filename, 'r') as file:
                 for line_num, line in enumerate(file, 1):
                     line = line.strip()
@@ -577,47 +577,61 @@ class Records:
                     product_id = parts[0]
                     name = parts[1]
 
-                    # Validate price
-                    try:
-                        price = float(parts[2])
-                        if price <= 0:
-                            raise InvalidFileFormatError(f"Line {line_num}: Price must be positive, got {price}")
-                    except ValueError:
-                        raise InvalidFileFormatError(f"Line {line_num}: Invalid price '{parts[2]}' - must be a number")
-
-                    # Validate stock
-                    try:
-                        stock = int(parts[3])
-                    except ValueError:
-                        raise InvalidFileFormatError(f"Line {line_num}: Invalid stock '{parts[3]}' - must be an integer")
-
                     if product_id.startswith('P'):
+                        # Regular product: ID, name, price, stock
+                        # CREDIT LEVEL: Accept empty/invalid prices, will be validated during order
+                        try:
+                            if parts[2].strip() == "":
+                                price = 0.0  # Empty price allowed
+                            else:
+                                price = float(parts[2])
+                                # Note: Negative/zero prices allowed in file
+                        except ValueError:
+                            raise InvalidFileFormatError(f"Line {line_num}: Invalid price '{parts[2]}' - must be a number")
+
+                        # Validate stock
+                        try:
+                            stock = int(parts[3])
+                        except ValueError:
+                            raise InvalidFileFormatError(f"Line {line_num}: Invalid stock '{parts[3]}' - must be an integer")
+
                         product = Product(product_id, name, price, stock)
                         self.add_product(product)
-                        products_data.append((line_num, product_id, None))
+
                     elif product_id.startswith('B'):
-                        if len(parts) < 5:
-                            raise InvalidFileFormatError(f"Line {line_num}: Bundle requires component IDs")
-                        component_ids = [cid.strip() for cid in parts[4:]]
-                        products_data.append((line_num, product_id, (name, stock, component_ids)))
+                        # Bundle: ID, name, component1, component2, ..., stock
+                        # Save for second pass after all products are loaded
+                        bundle_lines.append((line_num, parts))
                     else:
                         raise InvalidFileFormatError(f"Line {line_num}: Invalid product ID prefix '{product_id[0]}' - must be P or B")
 
             # Second pass: create bundles now that all products exist
-            for line_num, product_id, bundle_data in products_data:
-                if bundle_data:
-                    name, stock, component_ids = bundle_data
-                    components = []
-                    for comp_id in component_ids:
-                        comp = self.find_product(comp_id)
-                        if not comp:
-                            raise InvalidFileFormatError(f"Line {line_num}: Component '{comp_id}' not found")
-                        if isinstance(comp, Bundle):
-                            raise InvalidFileFormatError(f"Line {line_num}: Bundle cannot contain another bundle")
-                        components.append(comp)
+            for line_num, parts in bundle_lines:
+                product_id = parts[0]
+                name = parts[1]
 
-                    bundle = Bundle(product_id, name, stock, components)
-                    self.add_product(bundle)
+                # Last field is stock
+                try:
+                    stock = int(parts[-1])
+                except ValueError:
+                    raise InvalidFileFormatError(f"Line {line_num}: Invalid stock '{parts[-1]}' - must be an integer")
+
+                # Component IDs are everything between name and stock
+                component_ids = [cid.strip() for cid in parts[2:-1]]
+                if not component_ids:
+                    raise InvalidFileFormatError(f"Line {line_num}: Bundle requires at least one component")
+
+                components = []
+                for comp_id in component_ids:
+                    comp = self.find_product(comp_id)
+                    if not comp:
+                        raise InvalidFileFormatError(f"Line {line_num}: Component '{comp_id}' not found")
+                    if isinstance(comp, Bundle):
+                        raise InvalidFileFormatError(f"Line {line_num}: Bundle cannot contain another bundle")
+                    components.append(comp)
+
+                bundle = Bundle(product_id, name, stock, components)
+                self.add_product(bundle)
 
         except FileNotFoundError:
             raise InvalidFileFormatError(f"File not found: {filename}")
