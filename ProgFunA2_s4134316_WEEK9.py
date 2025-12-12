@@ -78,11 +78,7 @@ class Customer:
     """
     Base class representing a normal customer without membership.
     This class stores basic customer information and provides foundation for Member and VIPMember subclasses.
-
-    Attributes:
-        ID (str): Unique customer identifier starting with 'C'
-        name (str): Customer name (unique, no digits)
-        value (float): Total money customer has spent to date
+    Attributes: ID (str): Unique customer identifier starting with 'C', name (str): Customer name (unique, no digits), value (float): Total money customer has spent to date
     """
 
     def __init__(self, ID, name, value):
@@ -111,12 +107,8 @@ class Customer:
         """
         Calculate discount for normal customers.
         Normal customers receive no discount (0%).
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (discount_rate, price_after_discount)
         """
         return (0, price)
 
@@ -152,21 +144,15 @@ class Member(Customer):
         """
         Adjust the flat discount rate for all members.
         This is a class method that affects all Member instances.
-
-        Args:
-            rate (float): New discount rate (e.g., 0.05 for 5%)
+        Args: rate (float): New discount rate (e.g., 0.05 for 5%)
         """
         cls.__discount_rate = rate
 
     def get_discount(self, price):
         """
         Calculate discount for members with flat rate.
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (discount_rate, price_after_discount)
         """
         discounted_price = price * (1 - self.__discount_rate)
         return (self.__discount_rate, discounted_price)
@@ -194,12 +180,7 @@ class VIPMember(Customer):
     def __init__(self, ID, name, value, rate1=0.10):
         """
         Initialize a VIP Member.
-
-        Args:
-            ID (str): Customer ID starting with 'V'
-            name (str): Customer name
-            value (float): Total value spent
-            rate1 (float): First discount rate (default 10%)
+        Args: ID (str): Customer ID starting with 'V', name (str): Customer name, value (float): Total value spent, rate1 (float): First discount rate (default 10%)
         """
         super().__init__(ID, name, value)
         self.__rate1 = rate1  # Instance variable - can be different for each VIP member
@@ -222,9 +203,7 @@ class VIPMember(Customer):
     def set_threshold(cls, threshold):
         """
         Set the threshold value for all VIP members.
-
-        Args:
-            threshold (float): New threshold value
+        Args: threshold (float): New threshold value
         """
         cls.__threshold = threshold
 
@@ -232,9 +211,7 @@ class VIPMember(Customer):
         """
         Adjust discount rates for this VIP member.
         Second rate is automatically set to 5% higher than first rate.
-
-        Args:
-            rate1 (float): New first discount rate
+        Args: rate1 (float): New first discount rate
         """
         self.__rate1 = rate1
         self.__rate2 = rate1 + 0.05
@@ -242,12 +219,8 @@ class VIPMember(Customer):
     def get_discount(self, price):
         """
         Calculate discount for VIP members using two-tier system.
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (discount_rate, price_after_discount)
         """
         if price <= self.__threshold:
             discounted_price = price * (1 - self.__rate1)
@@ -266,23 +239,13 @@ class VIPMember(Customer):
 class Product:
     """
     Represents a product in the store.
-
-    Attributes:
-        ID (str): Unique product identifier starting with 'P'
-        name (str): Product name (unique, no digits)
-        price (float): Product price (must be positive)
-        stock (int): Available stock quantity
+    Attributes: ID (str): Unique product identifier starting with 'P', name (str): Product name (unique, no digits), price (float): Product price (must be positive), stock (int): Available stock quantity
     """
 
     def __init__(self, ID, name, price, stock):
         """
         Initialize a Product.
-
-        Args:
-            ID (str): Product ID
-            name (str): Product name
-            price (float): Product price
-            stock (int): Initial stock quantity
+        Args: ID (str): Product ID, name (str): Product name, price (float): Product price, stock (int): Initial stock quantity
         """
         self.__ID = ID
         self.__name = name
@@ -304,12 +267,8 @@ class Product:
     def set_price(self, price):
         """
         Set the product price.
-
-        Args:
-            price (float): New price (must be positive)
-
-        Raises:
-            InvalidPriceError: If price is zero or negative
+        Args: price (float): New price (must be positive)
+        Raises: InvalidPriceError: If price is zero or negative
         """
         if price <= 0:
             raise InvalidPriceError("Product price must be positive.")
@@ -322,21 +281,15 @@ class Product:
     def set_stock(self, stock):
         """
         Set the stock quantity.
-
-        Args:
-            stock (int): New stock quantity
+        Args: stock (int): New stock quantity
         """
         self.__stock = stock
 
     def reduce_stock(self, quantity):
         """
         Reduce stock by specified quantity.
-
-        Args:
-            quantity (int): Quantity to reduce
-
-        Raises:
-            InvalidQuantityError: If quantity exceeds available stock
+        Args: quantity (int): Quantity to reduce
+        Raises: InvalidQuantityError: If quantity exceeds available stock
         """
         if quantity > self.__stock:
             raise InvalidQuantityError(f"Insufficient stock. Available: {self.__stock}")
@@ -352,20 +305,13 @@ class Bundle(Product):
     Represents a product bundle (CREDIT LEVEL).
     A bundle is a collection of products sold together at a discounted price.
     Bundle price is automatically set to 80% of the sum of component prices.
-
-    Attributes:
-        components (list): List of Product objects included in the bundle
+    Attributes: components (list): List of Product objects included in the bundle
     """
 
     def __init__(self, ID, name, stock, components):
         """
         Initialize a Bundle.
-
-        Args:
-            ID (str): Bundle ID starting with 'B'
-            name (str): Bundle name
-            stock (int): Bundle stock quantity
-            components (list): List of Product objects in the bundle
+        Args: ID (str): Bundle ID starting with 'B', name (str): Bundle name, stock (int): Bundle stock quantity, components (list): List of Product objects in the bundle
         """
         self.__components = components
         # Calculate bundle price as 80% of component prices
@@ -388,23 +334,13 @@ class Bundle(Product):
 class Order:
     """
     Represents a customer order with a single product and timestamp (DI LEVEL).
-
-    Attributes:
-        customer (Customer): The customer placing the order
-        product (Product): The product being ordered
-        quantity (int): Quantity ordered
-        date (datetime): Order timestamp
+    Attributes: customer (Customer): The customer placing the order, product (Product): The product being ordered, quantity (int): Quantity ordered, date (datetime): Order timestamp
     """
 
     def __init__(self, customer, product, quantity, date=None):
         """
         Initialize an Order.
-
-        Args:
-            customer (Customer): The customer
-            product (Product): The product
-            quantity (int): Quantity ordered
-            date (datetime): Order timestamp (defaults to current time)
+        Args: customer (Customer): The customer, product (Product): The product, quantity (int): Quantity ordered, date (datetime): Order timestamp (defaults to current time)
         """
         self.__customer = customer
         self.__product = product
@@ -430,9 +366,7 @@ class Order:
     def calculate_total(self):
         """
         Calculate the total price before discount.
-
-        Returns:
-            float: Total price (product price * quantity)
+        Returns: float: Total price (product price * quantity)
         """
         return self.__product.get_price() * self.__quantity
 
@@ -443,9 +377,7 @@ class Order:
         2. Apply discount based on customer type
         3. Update customer's total value
         4. Reduce product stock
-
-        Returns:
-            tuple: (discount_rate, total_price_after_discount)
+        Returns: tuple: (discount_rate, total_price_after_discount)
         """
         total_price = self.calculate_total()
 
@@ -467,11 +399,7 @@ class Records:
     """
     Central repository for managing customers, products, and orders (DI LEVEL).
     This class handles file I/O and data management operations.
-
-    Attributes:
-        customers (list): List of Customer objects
-        products (list): List of Product objects
-        orders (list): List of Order objects
+    Attributes: customers (list): List of Customer objects, products (list): List of Product objects, orders (list): List of Order objects
     """
 
     def __init__(self):
@@ -507,17 +435,12 @@ class Records:
     def read_customers(self, filename="customers.txt"):
         """
         Read customer data from file with validation (CREDIT LEVEL).
-
         File format: ID, name, discount_rate, value (comma-separated)
         - C prefix: Normal customer
         - M prefix: Member
         - V prefix: VIP member (requires rate1)
-
-        Args:
-            filename (str): Path to customer file
-
-        Raises:
-            InvalidFileFormatError: If file format is invalid or data is corrupted
+        Args: filename (str): Path to customer file
+        Raises: InvalidFileFormatError: If file format is invalid or data is corrupted
         """
         try:
             with open(filename, 'r') as file:
@@ -574,16 +497,11 @@ class Records:
     def read_products(self, filename="products.txt"):
         """
         Read product data from file with validation (CREDIT + DI LEVEL).
-
         File format:
         - Regular Product: ID, name, price, stock
         - Bundle: ID, name, component1, component2, ..., stock
-
-        Args:
-            filename (str): Path to product file
-
-        Raises:
-            InvalidFileFormatError: If file format is invalid or data is corrupted
+        Args: filename (str): Path to product file
+        Raises: InvalidFileFormatError: If file format is invalid or data is corrupted
         """
         try:
             # First pass: read all regular products
@@ -668,15 +586,10 @@ class Records:
     def read_orders(self, filename="orders.txt"):
         """
         Read orders from CSV file and populate order history (DI LEVEL).
-
         File format: customer_name/ID, product_name/ID, quantity, date
         (Single item per order for DI level)
-
-        Args:
-            filename (str): Name of order file
-
-        Raises:
-            InvalidFileFormatError: If file has incorrect format or invalid data
+        Args: filename (str): Name of order file
+        Raises: InvalidFileFormatError: If file has incorrect format or invalid data
         """
         try:
             with open(filename, 'r') as file:
@@ -735,12 +648,8 @@ class Records:
     def find_customer(self, identifier):
         """
         Search for a customer by ID or name (CREDIT LEVEL - supports both).
-
-        Args:
-            identifier (str): Customer ID or name
-
-        Returns:
-            Customer or None: Found customer or None if not found
+        Args: identifier (str): Customer ID or name
+        Returns: Customer or None: Found customer or None if not found
         """
         for customer in self.__customers:
             if customer.get_ID() == identifier or customer.get_name() == identifier:
@@ -750,12 +659,8 @@ class Records:
     def find_product(self, identifier):
         """
         Search for a product by ID or name (CREDIT LEVEL - supports both).
-
-        Args:
-            identifier (str): Product ID or name
-
-        Returns:
-            Product or None: Found product or None if not found
+        Args: identifier (str): Product ID or name
+        Returns: Product or None: Found product or None if not found
         """
         for product in self.__products:
             if product.get_ID() == identifier or product.get_name() == identifier:
@@ -794,9 +699,7 @@ class Records:
     def list_customer_orders(self, identifier):
         """
         Display all orders for a specific customer (DI LEVEL).
-
-        Args:
-            identifier (str): Customer ID or name
+        Args: identifier (str): Customer ID or name
         """
         customer = self.find_customer(identifier)
         if customer is None:
@@ -828,11 +731,7 @@ class Operations:
     def __init__(self, customer_file="customers.txt", product_file="products.txt", order_file="orders.txt"):
         """
         Initialize the Operations system.
-
-        Args:
-            customer_file (str): Path to customer data file
-            product_file (str): Path to product data file
-            order_file (str): Path to order data file
+        Args: customer_file (str): Path to customer data file, product_file (str): Path to product data file, order_file (str): Path to order data file
         """
         self.__records = Records()
         self.__customer_file = customer_file
@@ -843,9 +742,7 @@ class Operations:
     def initialize(self):
         """
         Initialize the system by loading data from files.
-
-        Returns:
-            bool: True if initialization successful, False otherwise
+        Returns: bool: True if initialization successful, False otherwise
         """
         try:
             # Check if required files exist

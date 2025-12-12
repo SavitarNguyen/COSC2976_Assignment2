@@ -70,11 +70,7 @@ class Customer:
     """
     Base class representing a normal customer without membership.
     This class stores basic customer information and provides foundation for Member and VIPMember subclasses.
-
-    Attributes:
-        ID (str): Unique customer identifier starting with 'C'
-        name (str): Customer name (unique, no digits)
-        value (float): Total money customer has spent to date
+    Attributes: ID (str): Unique customer identifier starting with 'C', name (str): Customer name (unique, no digits), value (float): Total money customer has spent to date
     """
 
     def __init__(self, ID, name, value):
@@ -103,12 +99,8 @@ class Customer:
         """
         Calculate discount for normal customers.
         Normal customers receive no discount (0%).
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (discount_rate, price_after_discount)
         """
         return (0, price)
 
@@ -144,21 +136,15 @@ class Member(Customer):
         """
         Adjust the flat discount rate for all members.
         This is a class method that affects all Member instances.
-
-        Args:
-            rate (float): New discount rate (e.g., 0.05 for 5%)
+        Args: rate (float): New discount rate (e.g., 0.05 for 5%)
         """
         cls.__discount_rate = rate
 
     def get_discount(self, price):
         """
         Calculate discount for members with flat rate.
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (discount_rate, price_after_discount)
         """
         discounted_price = price * (1 - self.__discount_rate)
         return (self.__discount_rate, discounted_price)
@@ -186,12 +172,7 @@ class VIPMember(Customer):
     def __init__(self, ID, name, value, rate1=0.10):
         """
         Initialize a VIP Member.
-
-        Args:
-            ID (str): Customer ID starting with 'V'
-            name (str): Customer name
-            value (float): Total value spent
-            rate1 (float): First discount rate (default 10%)
+        Args: ID (str): Customer ID starting with 'V', name (str): Customer name, value (float): Total value spent, rate1 (float): First discount rate (default 10%)
         """
         super().__init__(ID, name, value)
         self.__rate1 = rate1  # Instance variable - can be different for each VIP member
@@ -214,18 +195,14 @@ class VIPMember(Customer):
     def set_threshold(cls, threshold):
         """
         Adjust the threshold for all VIP members.
-
-        Args:
-            threshold (float): New threshold value
+        Args: threshold (float): New threshold value
         """
         cls.__threshold = threshold
 
     def set_rate(self, rate1):
         """
         Adjust the discount rates for this individual VIP member.
-
-        Args:
-            rate1 (float): New first discount rate
+        Args: rate1 (float): New first discount rate
         """
         self.__rate1 = rate1
         self.__rate2 = rate1 + 0.05
@@ -233,12 +210,8 @@ class VIPMember(Customer):
     def get_discount(self, price):
         """
         Calculate discount for VIP members based on two-tier system.
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (applicable_discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (applicable_discount_rate, price_after_discount)
         """
         if price <= self.__threshold:
             # Use first rate for orders at or below threshold
@@ -259,12 +232,7 @@ class VIPMember(Customer):
 class Product:
     """
     Represents a product sold in the store.
-
-    Attributes:
-        ID (str): Unique product identifier starting with 'P'
-        name (str): Product name (unique, no digits)
-        price (float): Unit price per product
-        stock (int): Quantity available in stock
+    Attributes: ID (str): Unique product identifier starting with 'P', name (str): Product name (unique, no digits), price (float): Unit price per product, stock (int): Quantity available in stock
     """
 
     def __init__(self, ID, name, price, stock):
@@ -301,9 +269,7 @@ class Product:
     def reduce_stock(self, quantity):
         """
         Reduce stock by specified quantity after an order.
-
-        Args:
-            quantity (int): Amount to reduce from stock
+        Args: quantity (int): Amount to reduce from stock
         """
         self.__stock -= quantity
 
@@ -315,23 +281,15 @@ class Product:
 class Bundle(Product):
     """
     Represents a bundle of products sold together as one unit (CREDIT LEVEL).
-
     A bundle consists of multiple existing products offered at a discounted price.
     Bundle price is 80% of the total price of all component products.
-
-    Attributes:
-        components (list): List of Product objects that make up the bundle
+    Attributes: components (list): List of Product objects that make up the bundle
     """
 
     def __init__(self, ID, name, components, stock):
         """
         Initialize a Bundle.
-
-        Args:
-            ID (str): Bundle ID starting with 'B'
-            name (str): Bundle name
-            components (list): List of Product objects in the bundle
-            stock (int): Bundle stock quantity
+        Args: ID (str): Bundle ID starting with 'B', name (str): Bundle name, components (list): List of Product objects in the bundle, stock (int): Bundle stock quantity
         """
         # Calculate bundle price as 80% of sum of component prices
         total_price = sum(comp.get_price() for comp in components)
@@ -362,10 +320,7 @@ class OrderItem:
     def __init__(self, product, quantity):
         """
         Initialize an OrderItem.
-
-        Args:
-            product (Product): The product being ordered
-            quantity (int): Quantity of the product
+        Args: product (Product): The product being ordered, quantity (int): Quantity of the product
         """
         self.__product = product
         self.__quantity = quantity
@@ -398,11 +353,7 @@ class Order:
     def __init__(self, customer, items, date=None):
         """
         Initialize an Order.
-
-        Args:
-            customer (Customer): The customer placing the order
-            items (list): List of OrderItem objects
-            date (datetime): Order timestamp (defaults to current time)
+        Args: customer (Customer): The customer placing the order, items (list): List of OrderItem objects, date (datetime): Order timestamp (defaults to current time)
         """
         self.__customer = customer
         self.__items = items  # List of OrderItem objects
@@ -423,9 +374,7 @@ class Order:
     def calculate_total(self):
         """
         Calculate the total price before discount.
-
-        Returns:
-            float: Total price of all items
+        Returns: float: Total price of all items
         """
         return sum(item.get_subtotal() for item in self.__items)
 
@@ -436,9 +385,7 @@ class Order:
         2. Apply discount based on customer type
         3. Update customer's total value
         4. Reduce product stock
-
-        Returns:
-            tuple: (discount_rate, total_price_after_discount)
+        Returns: tuple: (discount_rate, total_price_after_discount)
         """
         total_price = self.calculate_total()
 
@@ -506,17 +453,12 @@ class Records:
     def read_customers(self, filename="customers.txt"):
         """
         Read customers from CSV file and populate customer list.
-
         File format: ID, name, discount_rate, value
         - ID starting with 'C': Normal Customer
         - ID starting with 'M': Member
         - ID starting with 'V': VIP Member (first discount rate stored)
-
-        Args:
-            filename (str): Name of customer file
-
-        Raises:
-            InvalidFileFormatError: If file has incorrect format or invalid data
+        Args: filename (str): Name of customer file
+        Raises: InvalidFileFormatError: If file has incorrect format or invalid data
         """
         try:
             with open(filename, 'r') as file:
@@ -569,16 +511,11 @@ class Records:
     def read_products(self, filename="products.txt"):
         """
         Read products from CSV file and populate product list.
-
         File format:
         - Normal product: ID, name, price, stock
         - Bundle: ID, name, component_IDs..., stock
-
-        Args:
-            filename (str): Name of product file
-
-        Raises:
-            InvalidFileFormatError: If file has incorrect format or invalid data
+        Args: filename (str): Name of product file
+        Raises: InvalidFileFormatError: If file has incorrect format or invalid data
         """
         try:
             with open(filename, 'r') as file:
@@ -673,16 +610,11 @@ class Records:
     def read_orders(self, filename="orders.txt"):
         """
         Read orders from CSV file and populate order history (DI LEVEL).
-
         File formats:
         - Single item: customer_name/ID, product_name/ID, quantity, date
         - Multiple items (HD): customer_name/ID, product1, qty1, product2, qty2, ..., date
-
-        Args:
-            filename (str): Name of order file
-
-        Raises:
-            InvalidFileFormatError: If file has incorrect format or invalid data
+        Args: filename (str): Name of order file
+        Raises: InvalidFileFormatError: If file has incorrect format or invalid data
         """
         try:
             with open(filename, 'r') as file:
@@ -753,12 +685,8 @@ class Records:
     def find_customer(self, identifier):
         """
         Search for a customer by ID or name.
-
-        Args:
-            identifier (str): Customer ID or name
-
-        Returns:
-            Customer object if found, None otherwise
+        Args: identifier (str): Customer ID or name
+        Returns: Customer object if found, None otherwise
         """
         for customer in self.__customers:
             if customer.get_ID() == identifier or customer.get_name() == identifier:
@@ -768,12 +696,8 @@ class Records:
     def find_product(self, identifier):
         """
         Search for a product by ID or name.
-
-        Args:
-            identifier (str): Product ID or name
-
-        Returns:
-            Product object if found, None otherwise
+        Args: identifier (str): Product ID or name
+        Returns: Product object if found, None otherwise
         """
         for product in self.__products:
             if product.get_ID() == identifier or product.get_name() == identifier:
@@ -819,9 +743,7 @@ class Records:
     def list_customer_orders(self, identifier):
         """
         Display all orders for a specific customer (DI LEVEL).
-
-        Args:
-            identifier (str): Customer ID or name
+        Args: identifier (str): Customer ID or name
         """
         customer = self.find_customer(identifier)
         if customer is None:
@@ -926,9 +848,7 @@ class Records:
     def get_most_valuable_customer(self):
         """
         Find the customer who has spent the most money (HD LEVEL).
-
-        Returns:
-            Customer object with highest total value, or None if no customers
+        Returns: Customer object with highest total value, or None if no customers
         """
         if not self.__customers:
             return None
@@ -943,9 +863,7 @@ class Records:
     def get_most_popular_product(self):
         """
         Find the product with the highest number of orders (HD LEVEL).
-
-        Returns:
-            Product object with most orders, or None if no orders
+        Returns: Product object with most orders, or None if no orders
         """
         if not self.__orders:
             return None
@@ -972,9 +890,7 @@ class Records:
     def write_customers(self, filename="customers.txt"):
         """
         Write all customers to file (HD LEVEL).
-
-        Args:
-            filename (str): Output file name
+        Args: filename (str): Output file name
         """
         try:
             with open(filename, 'w') as file:
@@ -994,9 +910,7 @@ class Records:
     def write_products(self, filename="products.txt"):
         """
         Write all products to file (HD LEVEL).
-
-        Args:
-            filename (str): Output file name
+        Args: filename (str): Output file name
         """
         try:
             with open(filename, 'w') as file:
@@ -1014,9 +928,7 @@ class Records:
     def write_orders(self, filename="orders.txt"):
         """
         Write all orders to file (HD LEVEL).
-
-        Args:
-            filename (str): Output file name
+        Args: filename (str): Output file name
         """
         try:
             with open(filename, 'w') as file:
@@ -1057,11 +969,7 @@ class Operations:
     def __init__(self, customer_file="customers.txt", product_file="products.txt", order_file="orders.txt"):
         """
         Initialize the Operations system.
-
-        Args:
-            customer_file (str): Customer data file
-            product_file (str): Product data file
-            order_file (str): Order history file (optional)
+        Args: customer_file (str): Customer data file, product_file (str): Product data file, order_file (str): Order history file (optional)
         """
         self.__records = Records()
         self.__customer_file = customer_file
@@ -1074,9 +982,7 @@ class Operations:
     def initialize(self):
         """
         Initialize the system by loading data from files.
-
-        Returns:
-            bool: True if initialization successful, False otherwise
+        Returns: bool: True if initialization successful, False otherwise
         """
         try:
             # Check if customer and product files exist (mandatory)
@@ -1487,12 +1393,10 @@ class Operations:
 def main():
     """
     Main entry point for the program.
-
     Supports command-line arguments (HD LEVEL):
     - No arguments: Use default file names (customers.txt, products.txt, orders.txt)
     - 2 arguments: python program.py <customer_file> <product_file>
     - 3 arguments: python program.py <customer_file> <product_file> <order_file>
-
     Any other number of arguments will display usage message and exit.
     """
 
