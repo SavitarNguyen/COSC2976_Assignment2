@@ -1,7 +1,6 @@
 """
 COSC2976 - Assignment 2 - WEEK 7 SUBMISSION (PASS LEVEL)
 Author: Student ID s1234567
-Libraries used: sys, os
 """
 
 import sys
@@ -11,10 +10,7 @@ import os
 class Customer:
     """
     Showing a normal customer without membership and also a foundation for Member and VIPMember subclasses.
-    Attributes:
-        ID (str): Unique customer identifier starting with 'C'
-        name (str): Customer name (unique, no digits)
-        value (float): Total money customer has spent to date
+    Attributes: ID (str, starts with C), name (str), Customer name (unique, no digits), value (float): Total money customer has spent to date
     """
 
     def __init__(self, ID, name, value):
@@ -43,7 +39,6 @@ class Customer:
         """
         Calculate discount for normal customers (0% for normal customers).
         Args: price (float): Original price before discount
-
         Returns: tuple: (discount_rate, price_after_discount)
         """
         return (0, price)
@@ -63,7 +58,6 @@ class Member(Customer):
 
     # Class variable: discount rate shared by all members
     __discount_rate = 0.05  # Default 5%
-
     def __init__(self, ID, name, value):
         """Initialize a Member - ID starts with 'M'"""
         super().__init__(ID, name, value)
@@ -78,21 +72,15 @@ class Member(Customer):
         """
         Adjust the flat discount rate for all members.
         This is a class method that affects all Member instances.
-
-        Args:
-            rate (float): New discount rate (e.g., 0.05 for 5%)
+        Args: rate (float): New discount rate (e.g., 0.05 for 5%)
         """
         cls.__discount_rate = rate
 
     def get_discount(self, price):
         """
         Calculate discount for members with flat rate.
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (discount_rate, price_after_discount)
         """
         discounted_price = price * (1 - self.__discount_rate)
         return (self.__discount_rate, discounted_price)
@@ -104,9 +92,8 @@ class Member(Customer):
 
 class VIPMember(Customer):
     """
-    Represents a customer with VIP membership.
+    Shows a customer with VIP membership.
     VIP members have two-tier discount rates based on order price threshold.
-
     - First discount rate: applies when order price <= threshold
     - Second discount rate: applies when order price > threshold
     - Second rate is always 5% higher than first rate
@@ -120,7 +107,6 @@ class VIPMember(Customer):
     def __init__(self, ID, name, value, rate1=0.10):
         """
         Initialize a VIP Member.
-
         Args:
             ID (str): Customer ID starting with 'V'
             name (str): Customer name
@@ -148,7 +134,6 @@ class VIPMember(Customer):
     def set_threshold(cls, threshold):
         """
         Adjust the threshold for all VIP members.
-
         Args:
             threshold (float): New threshold value
         """
@@ -157,9 +142,7 @@ class VIPMember(Customer):
     def set_rate(self, rate1):
         """
         Adjust the discount rates for this individual VIP member.
-
-        Args:
-            rate1 (float): New first discount rate
+        Args: rate1 (float): New first discount rate
         """
         self.__rate1 = rate1
         self.__rate2 = rate1 + 0.05
@@ -167,12 +150,8 @@ class VIPMember(Customer):
     def get_discount(self, price):
         """
         Calculate discount for VIP members based on two-tier system.
-
-        Args:
-            price (float): Original price before discount
-
-        Returns:
-            tuple: (applicable_discount_rate, price_after_discount)
+        Args: price (float): Original price before discount
+        Returns: tuple: (applicable_discount_rate, price_after_discount)
         """
         if price <= self.__threshold:
             # Use first rate for orders at or below threshold
@@ -193,7 +172,6 @@ class VIPMember(Customer):
 class Product:
     """
     Represents a product sold in the store.
-
     Attributes:
         ID (str): Unique product identifier starting with 'P'
         name (str): Product name (unique, no digits)
@@ -251,7 +229,6 @@ class Product:
 class Order:
     """
     Represents a customer order.
-
     This class handles order processing, including:
     - Customer information
     - Single product per order
@@ -288,8 +265,7 @@ class Order:
         """
         Calculate the total price before discount.
 
-        Returns:
-            float: Total price (price * quantity)
+        Returns: float: Total price (price * quantity)
         """
         return self.__product.get_price() * self.__quantity
 
@@ -301,8 +277,7 @@ class Order:
         3. Update customer's total value
         4. Reduce product stock
 
-        Returns:
-            tuple: (discount_rate, total_price_after_discount)
+        Returns: tuple: (discount_rate, total_price_after_discount)
         """
         total_price = self.calculate_total()
 
@@ -364,8 +339,7 @@ class Records:
         - ID starting with 'M': Member
         - ID starting with 'V': VIP Member (first discount rate stored)
 
-        Args:
-            filename (str): Name of customer file
+        Args: filename (str)
         """
         try:
             with open(filename, 'r') as file:
@@ -402,8 +376,7 @@ class Records:
 
         File format: ID, name, price, stock
 
-        Args:
-            filename (str): Name of product file
+        Args: filename (str):
         """
         try:
             with open(filename, 'r') as file:
@@ -438,11 +411,9 @@ class Records:
         """
         Search for a customer by ID or name.
 
-        Args:
-            identifier (str): Customer ID or name
+        Args: identifier (str): Customer ID or name
 
-        Returns:
-            Customer object if found, None otherwise
+        Returns: Customer object if found, None otherwise
         """
         for customer in self.__customers:
             if customer.get_ID() == identifier or customer.get_name() == identifier:
@@ -452,12 +423,9 @@ class Records:
     def find_product(self, identifier):
         """
         Search for a product by ID or name.
+        Args: identifier (str): Product ID or name
 
-        Args:
-            identifier (str): Product ID or name
-
-        Returns:
-            Product object if found, None otherwise
+        Returns: Product object if found, None otherwise
         """
         for product in self.__products:
             if product.get_ID() == identifier or product.get_name() == identifier:
@@ -495,9 +463,7 @@ class Operations:
         """
         Initialize the Operations system.
 
-        Args:
-            customer_file (str): Customer data file
-            product_file (str): Product data file
+        Args: customer_file (str), product_file (str)
         """
         self.__records = Records()
         self.__customer_file = customer_file
@@ -509,9 +475,7 @@ class Operations:
     def initialize(self):
         """
         Initialize the system by loading data from files.
-
-        Returns:
-            bool: True if initialization successful, False otherwise
+        Returns: bool: True if initialization successful, False otherwise
         """
         try:
             # Check if customer and product files exist (mandatory)
@@ -562,7 +526,6 @@ class Operations:
     def place_order(self):
         """
         Handle the place order operation (PASS LEVEL).
-
         Process:
         1. Get customer name
         2. Check if customer exists or create new customer
@@ -680,7 +643,6 @@ def main():
     """
     Main entry point for the program.
     """
-
     # Default file names
     customer_file = "customers.txt"
     product_file = "products.txt"
@@ -708,7 +670,6 @@ def main():
     else:
         print("Failed to initialize the system. Exiting.")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
